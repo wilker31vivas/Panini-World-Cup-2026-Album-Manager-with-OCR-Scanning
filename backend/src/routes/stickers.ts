@@ -17,7 +17,7 @@ router.get('/', async (req: Request, res: Response) => {
 
     if (owned !== undefined) {
       const ownedValue = String(owned === 'true' ? 1 : 0);
-      const result = await db.execute('SELECT * FROM stickers WHERE owned = ? ORDER BY code', [ownedValue]);
+      const result = await db.execute('SELECT * FROM stickers WHERE owned = ?', [ownedValue]);
 
       const stickers = result.rows.map(row => ({
         id: row.id as number,
@@ -30,7 +30,7 @@ router.get('/', async (req: Request, res: Response) => {
       return res.json(stickers);
     }
 
-    const result = await db.execute('SELECT * FROM stickers ORDER BY code');
+    const result = await db.execute('SELECT * FROM stickers');
 
     const stickers = result.rows.map(row => ({
       id: row.id as number,
