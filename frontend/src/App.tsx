@@ -3,7 +3,6 @@ import Layout from './components/Layout';
 import Dashboard from './pages/Dashboard';
 import Scanner from './pages/Scanner';
 import StickersList from './pages/StickersList';
-import './App.css';
 
 export default function App() {
   return (
