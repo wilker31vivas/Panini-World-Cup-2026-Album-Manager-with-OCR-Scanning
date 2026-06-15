@@ -36,49 +36,42 @@ export default function Layout({ children }: { children: ReactNode }) {
   const { pathname } = useLocation();
 
   return (
-    <div className="overflow-hidden max-w-7xl bg-slate-100 flex flex-col">
+    <div className="bg-slate-300 flex justify-center min-h-screen">
+      <div className="overflow-hidden max-w-7xl bg-slate-100 flex flex-col">
+        <header className="bg-[#0a1628] py-4 sm:p-6">
+          <div className="max-w-7xl flex items-center justify-center h-14">
+            <h1 className='text-white font-extrabold text-xl leading-none text-center'>Gerenciador de figurinhas do álbum da Copa do Mundo Panini 2026
+            </h1>
+          </div>
+        </header>
 
-      <header className="bg-[#0a1628] py-4 sm-py-6">
-        <div className="max-w-7xl flex items-center justify-center h-14">
-          <h1 className='text-white font-extrabold text-xl leading-none text-center'>Gerenciador de figurinhas do álbum da Copa do Mundo Panini 2026
-          </h1>
+        <nav className="bg-[#0f1e35] border-b border-white/[0.07]">
+          <div className="max-w-7xl mx-auto px-2 sm:px-6 flex justify-evenly  overflow-x-auto scrollbar-hide">
+            {navItems.map(({ to, label, icon }) => {
+              const isActive = pathname === to;
+              return (
+                <Link
+                  key={to}
+                  to={to}
+                  className={[
+                    'flex items-center gap-1.5 px-4 h-11 text-xs font-semibold whitespace-nowrap border-b-2 transition-colors duration-150',
+                    isActive
+                      ? 'text-white border-red-600'
+                      : 'text-slate-400 border-transparent hover:text-slate-200 hover:border-white/20',
+                  ].join(' ')}
+                >
+                  {icon}
+                  {label}
+                </Link>
+              );
+            })}
+          </div>
+        </nav>
 
-        </div>
-      </header>
-
-      <nav className="bg-[#0f1e35] border-b border-white/[0.07]">
-        <div className="max-w-7xl mx-auto px-2 sm:px-6 flex justify-evenly  overflow-x-auto scrollbar-hide">
-          {navItems.map(({ to, label, icon }) => {
-            const isActive = pathname === to;
-            return (
-              <Link
-                key={to}
-                to={to}
-                className={[
-                  'flex items-center gap-1.5 px-4 h-11 text-xs font-semibold whitespace-nowrap border-b-2 transition-colors duration-150',
-                  isActive
-                    ? 'text-white border-red-600'
-                    : 'text-slate-400 border-transparent hover:text-slate-200 hover:border-white/20',
-                ].join(' ')}
-              >
-                {icon}
-                {label}
-              </Link>
-            );
-          })}
-        </div>
-      </nav>
-
-      <main className="flex-1 max-w-7xl mx-auto w-full h-min-screen overflow-y-auto">
-        {children}
-      </main>
-
-      <footer className="bg-[#0a1628] border-t border-white/[0.07]">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
-          <p className="text-slate-500 text-xs">© 2026 Panini Collection Manager</p>
-
-        </div>
-      </footer>
+        <main className="flex-1 max-w-7xl mx-auto w-full h-min-screen overflow-y-auto">
+          {children}
+        </main>
+      </div>
     </div>
   );
 }

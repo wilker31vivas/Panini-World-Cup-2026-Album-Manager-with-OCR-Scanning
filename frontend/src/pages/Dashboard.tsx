@@ -54,7 +54,7 @@ export default function Dashboard() {
   const percentage = stats.total > 0 ? Math.round((stats.owned / stats.total) * 100) : 0;
 
   return (
-    <div className="min-h-screen bg-slate-100">
+    <div className="bg-slate-100">
 
       <div className="bg-[#0a1628] px-5 pt-8 pb-8 relative overflow-hidden">
         <div className="absolute -top-10 -right-10 w-44 h-44 rounded-full bg-red-600/10 pointer-events-none" />
@@ -76,7 +76,7 @@ export default function Dashboard() {
         </div>
       </div>
 
-      <div className="px-4 space-y-5 mt-5 pb-8">
+      <div className="px-4 space-y-5 mt-5">
 
         <div>
           <p className="text-[10px] font-bold tracking-widest uppercase text-slate-400 mb-2.5">Resumen</p>
