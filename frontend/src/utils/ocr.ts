@@ -27,9 +27,7 @@ export async function extractStickerCode(
 
     const matches = [...text.matchAll(/([A-Z]{3})\s?(\d+)/g)];
     const validMatch = matches.find((m) => validTeamCodes.has(m[1]));
-    console.log("matches", matches)
 
-    console.log(validMatch)
     return validMatch ? `${validMatch[1]} ${validMatch[2]}` : null;
   } catch (error) {
     console.error("OCR Error:", error);
