@@ -3,8 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import type { Sticker } from '../types/index';
 import { stickerApi } from '../services/api';
 import { extractStickerCode } from '../utils/ocr';
+import { validateImage } from '../utils/fileValidation';
 
-type ScanState = 'idle' | 'scanning' | 'processing' | 'result';
+type ScanState = 'idle' | 'scanning' | 'processing' | 'result' | 'loading';
 
 
 function ScanCorners() {
@@ -39,7 +40,7 @@ export default function Scanner() {
 
   const [state, setState] = useState<ScanState>('idle');
   const [result, setResult] = useState<Sticker | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null | undefined>(null);
   const navigate = useNavigate();
 
   const [validCodes, setValidCodes] = useState<Set<string>>(new Set())
@@ -123,11 +124,50 @@ export default function Scanner() {
     await processImage(canvasRef.current.toDataURL('image/jpeg'));
   };
 
+  const validateAndProcess = async (imageData: string) => {
+    setState('processing');
+    setError(null);
+    try {
+      const code = await extractStickerCode(imageData, validCodes);
+      if (!code) {
+        setError('Nenhum código foi detectado. Por favor, tente novamente.');
+        setState('idle');
+        return;
+      }
+
+      const sticker = await stickerApi.getStickerByCode(code);
+      if (!sticker) {
+        setError(`A figurinha "${code}" não está no banco de dados.`);
+        setState('idle');
+        return;
+      }
+
+      setResult(sticker);
+      setState('result');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erro ao processar a imagem');
+      setState('idle');
+    }
+  };
+
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
+    const validation = validateImage(file);
+    if (!validation.valid) {
+      setError(validation.error);
+      return;
+    }
+
     const reader = new FileReader();
-    reader.onload = (ev) => processImage(ev.target?.result as string);
+    reader.onload = (ev) => {
+      const imageData = ev.target?.result as string;
+      validateAndProcess(imageData);
+    };
+    reader.onerror = () => {
+      setError('Erro ao ler arquivo. Tente novamente.');
+    };
     reader.readAsDataURL(file);
   };
 
