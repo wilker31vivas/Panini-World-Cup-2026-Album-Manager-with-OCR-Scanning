@@ -23,7 +23,7 @@ interface UseScannerReturn {
   statusScanner: ScanState
   result: Sticker | null
   isProcessing: boolean
-  reset: () => void
+  resetScanner: () => void
   updateStatus: (owned: boolean) => Promise<void>
   capturedImage: string | null
   setCapturedImage: React.Dispatch<React.SetStateAction<string | null>>
@@ -187,19 +187,19 @@ function useScanner(): UseScannerReturn {
     }
   };
 
-  const reset = () => {
+  const resetScanner = () => {
     setCapturedImage(null)
     setResult(null);
     setErrorScanner(null);
   };
 
-  return { fileInputRef, canvasRef, errorScanner, handleFileUpload, statusScanner, result, isProcessing, reset, validateAndProcess, updateStatus, capturedImage, setCapturedImage, }
+  return { fileInputRef, canvasRef, errorScanner, handleFileUpload, statusScanner, result, isProcessing, resetScanner, validateAndProcess, updateStatus, capturedImage, setCapturedImage, }
 }
 
 // ─── Componente ───────────────────────────────────────────────────────────────
 export default function Scanner() {
   const { statusCamera, videoRef, error, startCamera, stopCamera } = useCamera();
-  const { fileInputRef, canvasRef, errorScanner, handleFileUpload, statusScanner, result, isProcessing, reset, validateAndProcess, updateStatus, capturedImage, setCapturedImage } = useScanner();
+  const { fileInputRef, canvasRef, errorScanner, handleFileUpload, statusScanner, result, isProcessing, resetScanner, validateAndProcess, updateStatus, capturedImage, setCapturedImage } = useScanner();
 
   const captureFrame = () => {
     if (!videoRef.current || !canvasRef.current) return;
@@ -222,14 +222,17 @@ export default function Scanner() {
   };
 
   if (statusScanner === 'result' && result) {
-    return <Result result={result} errorScanner={errorScanner} isProcessing={isProcessing} reset={reset} updateStatus={updateStatus} />
+    return <Result result={result} errorScanner={errorScanner} isProcessing={isProcessing} reset={resetScanner} updateStatus={updateStatus} />
   }
 
   if (capturedImage) {
     return (
       <CapturedPreview
         image={capturedImage}
-        onRetry={reset}
+        onRetry={() => {
+          resetScanner();
+          startCamera()
+        }}
         onScan={() => validateAndProcess(capturedImage)}
         loading={isProcessing}
       />
@@ -260,7 +263,6 @@ export default function Scanner() {
       />
       <canvas ref={canvasRef} className="hidden" />
 
-      {/* Info de estado */}
       <p className="text-xs text-gray-500">
         Estado: <span className="font-mono">{statusCamera}</span>
       </p>
@@ -494,6 +496,14 @@ function CapturedPreview({ image, onRetry, onScan, loading }: { image: string, o
           className="w-full"
         />
       </div>
+
+      <button
+        onClick={onRetry}
+        className="w-full border py-3 rounded-xl"
+      >
+        Tente novamente
+      </button>
+
     </div>
   );
 }
