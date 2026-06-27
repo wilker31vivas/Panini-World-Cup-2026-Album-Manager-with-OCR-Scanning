@@ -25,6 +25,9 @@ interface UseScannerReturn {
   isProcessing: boolean
   reset: () => void
   updateStatus: (owned: boolean) => Promise<void>
+  capturedImage: string | null
+  setCapturedImage: React.Dispatch<React.SetStateAction<string | null>>
+  validateAndProcess: (imageData: string) => Promise<void>
 }
 
 function ScanCorners() {
@@ -110,6 +113,7 @@ function useScanner(): UseScannerReturn {
   const [validCodes, setValidCodes] = useState<Set<string>>(new Set())
   const [result, setResult] = useState<Sticker | null>(null);
   const isProcessing = statusScanner === 'processing';
+  const [capturedImage, setCapturedImage] = useState<string | null>(null);
 
   useEffect(() => {
     const getValidCodes = async () => {
@@ -184,20 +188,52 @@ function useScanner(): UseScannerReturn {
   };
 
   const reset = () => {
+    setCapturedImage(null)
     setResult(null);
     setErrorScanner(null);
   };
 
-  return { fileInputRef, canvasRef, errorScanner, handleFileUpload, statusScanner, result, isProcessing, reset, updateStatus }
+  return { fileInputRef, canvasRef, errorScanner, handleFileUpload, statusScanner, result, isProcessing, reset, validateAndProcess, updateStatus, capturedImage, setCapturedImage, }
 }
 
 // ─── Componente ───────────────────────────────────────────────────────────────
 export default function Scanner() {
   const { statusCamera, videoRef, error, startCamera, stopCamera } = useCamera();
-  const { fileInputRef, canvasRef, errorScanner, handleFileUpload, statusScanner, result, isProcessing, reset, updateStatus } = useScanner();
+  const { fileInputRef, canvasRef, errorScanner, handleFileUpload, statusScanner, result, isProcessing, reset, validateAndProcess, updateStatus, capturedImage, setCapturedImage } = useScanner();
+
+  const captureFrame = () => {
+    if (!videoRef.current || !canvasRef.current) return;
+
+    const video = videoRef.current;
+    const canvas = canvasRef.current;
+
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+
+    const ctx = canvas.getContext("2d");
+
+    if (!ctx) return;
+
+    ctx.drawImage(video, 0, 0);
+
+    const imageData = canvas.toDataURL("image/jpeg");
+
+    setCapturedImage(imageData);
+  };
 
   if (statusScanner === 'result' && result) {
     return <Result result={result} errorScanner={errorScanner} isProcessing={isProcessing} reset={reset} updateStatus={updateStatus} />
+  }
+
+  if (capturedImage) {
+    return (
+      <CapturedPreview
+        image={capturedImage}
+        onRetry={reset}
+        onScan={() => validateAndProcess(capturedImage)}
+        loading={isProcessing}
+      />
+    )
   }
 
   return (
@@ -212,7 +248,7 @@ export default function Scanner() {
           </div>
         )}
 
-        <CameraControls status={statusCamera} startCamera={startCamera} stopCamera={stopCamera} fileInputRef={fileInputRef} />
+        <CameraControls status={statusCamera} startCamera={startCamera} stopCamera={stopCamera} fileInputRef={fileInputRef} captureFrame={captureFrame} />
 
       </div>
       <input
@@ -244,6 +280,11 @@ export function CameraStream({ videoRef, status, error }: { videoRef: React.RefO
           className="w-full h-full object-cover"
         />
 
+        {status === "active" && (
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+            <div className="w-48 h-20 border-2 border-[#d4a017] rounded-lg opacity-70" />
+          </div>
+        )}
 
 
         {status !== "active" && (
@@ -293,12 +334,13 @@ export function CameraStream({ videoRef, status, error }: { videoRef: React.RefO
   )
 }
 
-export function CameraControls({ status, startCamera, stopCamera, fileInputRef }) {
+export function CameraControls({ status, startCamera, stopCamera, fileInputRef, captureFrame }) {
   return (
     <div className="p-4 space-y-2.5">
       {status === 'active' ? (
         <>
           <button
+            onClick={captureFrame}
             className="w-full flex items-center justify-center gap-2 bg-red-600 hover:bg-red-700 active:scale-95 text-white font-bold text-sm py-3.5 rounded-xl transition-all shadow-sm shadow-red-600/20 disabled:opacity-50"
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -436,6 +478,21 @@ export function Result({ result, errorScanner, isProcessing, reset, updateStatus
             Escaneie outra figurinha
           </button>
         </div>
+      </div>
+    </div>
+  );
+}
+
+function CapturedPreview({ image, onRetry, onScan, loading }: { image: string, onRetry: () => void, onScan: () => void, loading: boolean }) {
+  return (
+    <div className="p-4 max-w-md mx-auto space-y-4">
+
+      <div className="rounded-2xl overflow-hidden">
+        <img
+          src={image}
+          alt="captura"
+          className="w-full"
+        />
       </div>
     </div>
   );
