@@ -53,6 +53,18 @@ function ErrorBanner({ message }: { message: string }) {
   );
 }
 
+function LoadingBanner({ message = "Carregando..." }: { message?: string }) {
+  return (
+    <div className="mx-4 mt-3 flex items-center gap-2.5 bg-blue-50 border border-blue-100 rounded-xl px-3.5 py-2.5">
+      <svg className="w-4 h-4 text-blue-600 flex-shrink-0 animate-spin" fill="none" viewBox="0 0 24 24">
+        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth={4} />
+        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+      </svg>
+      <span className="text-xs font-semibold text-blue-600">{message}</span>
+    </div>
+  );
+}
+
 function useCamera(): UseCameraReturn {
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -109,7 +121,7 @@ function useScanner(): UseScannerReturn {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [errorScanner, setErrorScanner] = useState<string | null | undefined>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [statusScanner, setStatusScanner] = useState<ScanState>('idle');
+  const [statusScanner, setStatusScanner] = useState<ScanState>('processing');
   const [validCodes, setValidCodes] = useState<Set<string>>(new Set())
   const [result, setResult] = useState<Sticker | null>(null);
   const isProcessing = statusScanner === 'processing';
@@ -221,6 +233,10 @@ export default function Scanner() {
     setCapturedImage(imageData);
   };
 
+  useEffect(()=>{
+    console.log(statusScanner)
+  },[statusScanner])
+
   if (statusScanner === 'result' && result) {
     return <Result result={result} errorScanner={errorScanner} isProcessing={isProcessing} reset={resetScanner} updateStatus={updateStatus} />
   }
@@ -245,11 +261,9 @@ export default function Scanner() {
 
         <CameraStream videoRef={videoRef} status={statusCamera} error={error} />
 
-        {errorScanner && (
-          <div className="mx-4 mt-3">
-            <ErrorBanner message={errorScanner} />
-          </div>
-        )}
+        {errorScanner && <ErrorBanner message={errorScanner} />}
+
+        {statusScanner === 'processing' && <LoadingBanner/>}
 
         <CameraControls status={statusCamera} startCamera={startCamera} stopCamera={stopCamera} fileInputRef={fileInputRef} captureFrame={captureFrame} />
 
@@ -432,7 +446,7 @@ export function Result({ result, errorScanner, isProcessing, reset, updateStatus
                 Estado atual
               </p>
               <p className={`text-sm font-bold ${result.owned ? 'text-green-700' : 'text-red-600'}`}>
-                {result.owned ? 'Ya la tengo' : 'Me falta'}
+                {result.owned ? 'Eu já tenho.' : 'Eu não tenho'}
               </p>
             </div>
           </div>
