@@ -44,7 +44,7 @@ function ScanCorners() {
 
 function ErrorBanner({ message }: { message: string }) {
   return (
-    <div className="mx-4 mb-3 flex items-center gap-2.5 bg-red-50 border border-red-100 rounded-xl px-3.5 py-2.5">
+    <div className="mx-4 mt-3 flex items-center gap-2.5 bg-red-50 border border-red-100 rounded-xl px-3.5 py-2.5">
       <svg className="w-4 h-4 text-red-600 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
       </svg>
@@ -53,9 +53,9 @@ function ErrorBanner({ message }: { message: string }) {
   );
 }
 
-function LoadingBanner({ message = "Carregando..." }: { message?: string }) {
+function LoadingBanner({ message = "Escaneando..." }: { message?: string }) {
   return (
-    <div className="mx-4 mt-3 flex items-center gap-2.5 bg-blue-50 border border-blue-100 rounded-xl px-3.5 py-2.5">
+    <div className="mx-4 mt-3 flex items-center justify-center gap-2.5 bg-blue-50 border border-blue-100 rounded-xl px-3.5 py-2.5">
       <svg className="w-4 h-4 text-blue-600 flex-shrink-0 animate-spin" fill="none" viewBox="0 0 24 24">
         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth={4} />
         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
@@ -121,7 +121,7 @@ function useScanner(): UseScannerReturn {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [errorScanner, setErrorScanner] = useState<string | null | undefined>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [statusScanner, setStatusScanner] = useState<ScanState>('processing');
+  const [statusScanner, setStatusScanner] = useState<ScanState>('idle');
   const [validCodes, setValidCodes] = useState<Set<string>>(new Set())
   const [result, setResult] = useState<Sticker | null>(null);
   const isProcessing = statusScanner === 'processing';
@@ -233,12 +233,11 @@ export default function Scanner() {
     setCapturedImage(imageData);
   };
 
-  useEffect(()=>{
-    console.log(statusScanner)
-  },[statusScanner])
-
   if (statusScanner === 'result' && result) {
-    return <Result result={result} errorScanner={errorScanner} isProcessing={isProcessing} reset={resetScanner} updateStatus={updateStatus} />
+    return <Result result={result} isProcessing={isProcessing} reset={() => {
+      resetScanner();
+      startCamera()
+    }} updateStatus={updateStatus} />
   }
 
   if (capturedImage) {
@@ -251,6 +250,7 @@ export default function Scanner() {
         }}
         onScan={() => validateAndProcess(capturedImage)}
         loading={isProcessing}
+        errorScanner={errorScanner}
       />
     )
   }
@@ -263,7 +263,7 @@ export default function Scanner() {
 
         {errorScanner && <ErrorBanner message={errorScanner} />}
 
-        {statusScanner === 'processing' && <LoadingBanner/>}
+        {isProcessing && <LoadingBanner />}
 
         <CameraControls status={statusCamera} startCamera={startCamera} stopCamera={stopCamera} fileInputRef={fileInputRef} captureFrame={captureFrame} />
 
@@ -402,7 +402,7 @@ export function CameraControls({ status, startCamera, stopCamera, fileInputRef, 
   )
 }
 
-export function Result({ result, errorScanner, isProcessing, reset, updateStatus }) {
+export function Result({ result, isProcessing, reset, updateStatus }) {
   return (
     <div className="p-4 max-w-md mx-auto space-y-4">
       <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
@@ -451,8 +451,6 @@ export function Result({ result, errorScanner, isProcessing, reset, updateStatus
             </div>
           </div>
 
-          {errorScanner && <ErrorBanner message={errorScanner} />}
-
           <button
             onClick={() => updateStatus(!result.owned)}
             disabled={isProcessing}
@@ -499,7 +497,7 @@ export function Result({ result, errorScanner, isProcessing, reset, updateStatus
   );
 }
 
-function CapturedPreview({ image, onRetry, onScan, loading }: { image: string, onRetry: () => void, onScan: () => void, loading: boolean }) {
+function CapturedPreview({ image, onRetry, onScan, loading, errorScanner }: { image: string, onRetry: () => void, onScan: () => void, loading: boolean, errorScanner: string | null | undefined }) {
   return (
     <div className="p-4 max-w-md mx-auto space-y-4">
 
@@ -510,6 +508,17 @@ function CapturedPreview({ image, onRetry, onScan, loading }: { image: string, o
           className="w-full"
         />
       </div>
+
+      {errorScanner && <ErrorBanner message={errorScanner} />}
+      {loading && <LoadingBanner />}
+
+      <button
+        onClick={onScan}
+        disabled={loading}
+        className="w-full bg-red-600 text-white py-3 rounded-xl"
+      >
+        Escanear
+      </button>
 
       <button
         onClick={onRetry}
