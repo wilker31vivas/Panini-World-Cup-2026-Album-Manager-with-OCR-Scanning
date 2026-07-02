@@ -19,3 +19,5 @@ export interface Stats {
   missing: number;
   percentage: number;
 }
+
+export type CameraStatus = "idle" | "loading" | "active" | "error";
